@@ -39,14 +39,21 @@ public class bootstrap {
 			System.out.println("USAGE: java com.neocoretechs.bootstrapper.bootstrap <bytecode server node> <main method of class to execute> [arg 0 to main] [arg 1 to main] ...");
 			return;
 		}
+      	int count = 0;
+    	Class[] types = null;
+    	String[] sargs = null;
+    	Object[] oargs = new Object[1];
         try {
         	hcl.connectToRemoteRepository(args[0]);
         	Class targetClass = hcl.loadClass(args[1]);
         	final Method method = targetClass.getMethod("main", String[].class);
-            final Object[] oargs = new Object[args.length-2];
+        	count = method.getParameterCount();
+        	types = method.getParameterTypes();
+            sargs = new String[args.length-2];
             for(int i = 0; i < args.length-2; i++) {
-            	oargs[i] = args[i+2];
+            	sargs[i] = args[i+2];
             }
+            oargs[0] = sargs;
             method.invoke(null, oargs);
             //
         	//Constructor c = target.getConstructor(new Class[] {Class.forName(args[1])});
@@ -54,8 +61,19 @@ public class bootstrap {
 		} catch (IllegalAccessException | IllegalArgumentException
 				| InvocationTargetException | ClassNotFoundException | NoSuchMethodException | SecurityException e) {
 			System.out.println("Failed to invoke main method of "+args[1]+". Check bytecode server "+args[0]+" provisioning.");
-	        for(int i = 0; i < args.length-2; i++) {
-	            	System.out.println("Argument to main "+i+" - "+args[i+2]);
+	        for(int i = 0; i < oargs.length; i++) {
+	            	System.out.println("Argument to main "+i+" - "+oargs[i]);
+	        }
+	        System.out.println("Should be:"+count+" of types:");
+	        if(types == null)
+	        	System.out.println("Wasn't able to get the parameter types, sorry");
+	        else {
+	        	if(types.length != oargs.length) {
+	        		System.out.println("Required length of paramters is "+types.length+" but the proposed parameter array is of length "+oargs.length);
+	        	} else
+	        		for(int i = 0; i < types.length; i++) {
+	        			System.out.println(i+" required:"+types[i]+" proposed:"+oargs[i].getClass());
+	        		}
 	        }
 			e.printStackTrace();
 		} catch (IOException e) {
