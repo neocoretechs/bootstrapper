@@ -20,7 +20,7 @@ import com.neocoretechs.relatrix.server.HandlerClassLoader;
  * support the loading of JARs, classes, directories, etc, and for overwriting and deleting old bytecode.<p/>
  * The use case here is a cluster or robot or network where provisioning only has to be supplied to the server rather than directories
  * on each node, thus centralizing deployment and operation of the system.<p/>
- * java -cp /lib/BigSack.jar:/lib/Relatrix.jar:/lib/bootstrapper.jar. -DBigSack.properties="/lib/BigSack.properties" com.neocoretechs.bootstrapper.bootstrap <remote node> <main method> <arg 0> <arg 1> ...
+ * java -cp /lib/BigSack.jar:/lib/Relatrix.jar:/lib/bootstrapper.jar. -DBigSack.properties="/lib/BigSack.properties" com.neocoretechs.bootstrapper.bootstrap <local node> <remote node> <main method> <arg 0> <arg 1> ...
  * @author Jonathan Groff (C) NeoCoreTechs 2021
  *
  */
@@ -32,11 +32,11 @@ public class bootstrap {
 	 * the main method of arg[1], and passing to that main method the remaining arguments on the command line.<p/>
 	 * The primary purpose to is to load from remote bytecode repository those classes needed to initialize and run the
 	 * Java application from a centralized bytecode server instead of a collection of Jars or a directory, much as an app server do.
-	 * @param args [0] - remote or local hostname [1] class with main method to exec [2-...] arguments to loaded main
+	 * @param args [0] - local hostname [1] remote hostname [2] class with main method to exec [3-...] arguments to loaded main
 	 */
 	public static void main(String[] args) {
 		if(args.length < 2) {
-			System.out.println("USAGE: java com.neocoretechs.bootstrapper.bootstrap <bytecode server node> <main method of class to execute> [arg 0 to main] [arg 1 to main] ...");
+			System.out.println("USAGE: java com.neocoretechs.bootstrapper.bootstrap <local address> <bytecode server node address> <main method of class to execute> [arg 0 to main] [arg 1 to main] ...");
 			return;
 		}
       	int count = 0;
@@ -44,14 +44,14 @@ public class bootstrap {
     	String[] sargs = null;
     	Object[] oargs = new Object[1];
         try {
-        	hcl.connectToRemoteRepository(args[0]);
-        	Class targetClass = hcl.loadClass(args[1]);
+        	hcl.connectToRemoteRepository(args[0],args[1],9999);
+        	Class targetClass = hcl.loadClass(args[2]);
         	final Method method = targetClass.getMethod("main", String[].class);
         	count = method.getParameterCount();
         	types = method.getParameterTypes();
-            sargs = new String[args.length-2];
-            for(int i = 0; i < args.length-2; i++) {
-            	sargs[i] = args[i+2];
+            sargs = new String[args.length-3];
+            for(int i = 0; i < args.length-3; i++) {
+            	sargs[i] = args[i+3];
             }
             oargs[0] = sargs;
             method.invoke(null, oargs);
